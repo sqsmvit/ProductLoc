@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.sqsmv.productloc.LoadActivity">
+
+    <TextView
+        android:id="@+id/versionInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:textAppearanceLarge"
+        android:text="version: "
+        />
+
+    <TextView
+        android:id="@+id/instructions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/versionInfo"
+        android:text="\nInstructions:\n
+1. Try to use location barcodes as much as possible.\n
+2. Set Room, Grid (A-Z), Grid(1-20) situated before scanning product.\n
+3. Scan product Masnum or UPC, make changes to position as needed.\n
+4. Commit button when satisfied\n"
+        android:textAppearance="?android:textAppearanceLarge" />
+
+    <Button
+        android:id="@+id/startScanningButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/instructions"
+        android:layout_centerHorizontal="true"
+        android:text="Start Scanning"
+        />
+
+
+
+</RelativeLayout>
+

@@ -1,0 +1,68 @@
+<resources>
+    <string name="app_name">SQS ProductLoc</string>
+    <string name="roomNameValues">
+	       { "W1": \"Warehouse 1\",
+	        "W2": \"Warehouse 2\",
+	        "ST": \"Sorting\",
+	        "BF": \"Buffing\",
+	        "TF": \"Three Four\",
+            "HW" : \"Hall Way\" }</string>
+    <string-array name="colValues">
+        <item></item>
+        <item>A</item>
+        <item>B</item>
+        <item>C</item>
+        <item>D</item>
+        <item>E</item>
+        <item>F</item>
+        <item>G</item>
+        <item>H</item>
+        <item>I</item>
+        <item>J</item>
+        <item>K</item>
+        <item>L</item>
+        <item>M</item>
+        <item>N</item>
+        <item>O</item>
+        <item>P</item>
+        <item>Q</item>
+        <item>R</item>
+        <item>S</item>
+        <item>T</item>
+    </string-array>
+    <string name="DBX_APP_KEY">vhzlp0r7je0wwbq</string>
+    <string name="DBX_SECRET_KEY">4taftdmfqbwn1t8</string>
+    <string name="apk_file_name">ProductLoc.apk</string>
+    <string name="ERR_WIFI">Must be connected to WiFi to start scan!</string>
+    <string name="title_activity_socket_mobile_pair">SocketMobilePairActivity</string>
+
+    <!-- CONFIG SETTINGS -->
+    <string name="sameScanCheck">2</string>
+    <string name="qtyCheckNum">2</string>
+    <string name="adminPass">6029zjb5</string>
+    <string name="BACKUP_DIR">backups</string>
+    <string name="adminCode">admin-6029</string>
+    <string name="troubleShooting">Trouble Shooting</string>
+    <string name="tsText">        If scanner does not work try these steps:\n
+	    	1. Restart scanner using small button.\n
+	    	    \tWait for beep and try to scan.\n
+            2. Re-pair scanner following instructions below.\n
+	    	    \tWait for beep and try to scan\n
+	    	3. Exit and restart app\n
+	    	    \tWait for beep and try to scan\n
+	    	4. Contact Manager\n</string>
+    <string name="tsText_restart">1.Restart device using small button</string>
+    <string name="tsText_scan">2. Scan above barcode</string>
+    <string name="tsText_app">3. Exit and restart app </string>
+    <string name="tsText_finally">4. Contact Manager</string>
+    <string name="tsText_beep">Wait for beep and try to scan</string>
+
+    <!-- Pair Activity -->
+    <string name="pairHeader">Pair Instructions</string>
+    <string name="pairInstruction1">1) Hold Scan and Power buttons until device restarts</string>
+    <string name="pairInstruction2">2) Scan SPP Barcode</string>
+    <string name="pairInstruction3">3) Scan barcode below</string>
+    <string name="pairInstruction4">4) Return to main screen of app and accept pairing request if prompted
+        \n5) Wait for single beep and try to scan</string>
+
+</resources>
