@@ -1,6 +1,5 @@
   package com.sqsmv.productloc.database.scan;
 
-import android.content.ContentValues;
 import android.database.Cursor;
 
 import com.sqsmv.productloc.database.DBAccess;
@@ -36,6 +35,19 @@ import com.sqsmv.productloc.database.QueryBuilder;
           }
       }
 
+      public Cursor selectScansForDisplay()
+      {
+          String query = "SELECT s._id, s.masNum, s.room, s.col, s.row, " +
+                  "COALESCE(p1.name, p2.name, p3.name, 'Title Not Found') AS name FROM Scan s " +
+                  "LEFT JOIN Product p1 ON s.masNum = p1.masnum " +
+                  "LEFT JOIN UPC u1 ON s.masNum = u1.upc " +
+                        "LEFT JOIN Product p2 ON u1.masnum = p2.masnum " +
+                  "LEFT JOIN UPC u2 ON rtrim(s.masNum, '-N') = u2.upc " +
+                        "LEFT JOIN Product p3 ON u2.masnum = p3.masnum " +
+                  "ORDER BY _id DESC LIMIT 3";
+          return getDB().rawQuery(query, null);
+      }
+
 
       public int getTotalScans()
       {
@@ -43,19 +55,5 @@ import com.sqsmv.productloc.database.QueryBuilder;
           int totalScans = dbCursor.getCount();
           dbCursor.close();
           return totalScans;
-      }
-
-
-
-      public int updateRecordByID(int id, ScanRecord editRecord)
-      {
-          ContentValues values = new ContentValues();
-          values.put(ScanContract.COLUMN_NAME_MASNUM, editRecord.getMasNum());
-          values.put(ScanContract.COLUMN_NAME_ROOM, editRecord.getRoom());
-          values.put(ScanContract.COLUMN_NAME_ROW, editRecord.getRow());
-          values.put(ScanContract.COLUMN_NAME_COL, editRecord.getCol());
-          values.put(ScanContract.COLUMN_NAME_BUILDING, editRecord.getBuilding());
-
-          return getDB().update(ScanContract.TABLE_NAME, values, ScanContract._ID + " = ?", new String[]{String.valueOf(id)});
       }
   }

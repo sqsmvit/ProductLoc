@@ -14,6 +14,18 @@ public abstract class DBRecord
         this.dbContract = dbContract;
     }
 
+    public DBRecord(DBContract dbContract, Cursor dbCursor)
+    {
+        this.dbContract = dbContract;
+        initRecord();
+        if(!dbCursor.isBeforeFirst() && !dbCursor.isAfterLast())
+        {
+            buildWithCursor(dbCursor);
+        }
+    }
+
+    public abstract void initRecord();
+
     public abstract String[] getTableInsertData();
 
     public boolean buildWithCursor(Cursor dbCursor)

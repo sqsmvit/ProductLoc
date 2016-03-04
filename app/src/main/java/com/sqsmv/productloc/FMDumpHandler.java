@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 
-public class FMDumpHandler implements Runnable
+public class FMDumpHandler extends Thread
 {
     private static final String TAG = "FMDumpHandler";
 
@@ -25,6 +25,7 @@ public class FMDumpHandler implements Runnable
 
     FMDumpHandler(XMLDBAccess fileDataAccess)
     {
+        super(fileDataAccess.getTableName());
         xmlDBAccess = fileDataAccess;
     }
 

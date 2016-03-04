@@ -82,32 +82,7 @@ public class ProductRecord extends XMLDBRecord
 
     public ProductRecord(Cursor dbCursor)
     {
-        super(new ProductContract());
-        masNum = "";
-        name = "***ERR: NOT FOUND***";
-        category = "";
-        rating = "";
-        streetDate = "";
-        titleFilm = -1;
-        noCover = -1;
-        priceList = "";
-        isNew = -1;
-        isBoxSet = -1;
-        multipack = -1;
-        mediaFormat = "";
-        priceFilters = "";
-        specialFields = "";
-        studio = "";
-        season = "";
-        numberOfDiscs = -1;
-        theaterDate = "";
-        studioName = "";
-        setSha("");
-        if(dbCursor.moveToFirst())
-        {
-            buildWithCursor(dbCursor);
-            dbCursor.close();
-        }
+        super(new ProductContract(), dbCursor);
     }
 
     public String getMasNum()
@@ -301,6 +276,31 @@ public class ProductRecord extends XMLDBRecord
     }
 
     @Override
+    public void initRecord()
+    {
+        setMasNum("");
+        setName("***ERR: NOT FOUND***");
+        setCategory("");
+        setRating("");
+        setStreetDate("");
+        setTitleFilm(-1);
+        setNoCover(-1);
+        setPriceList("");
+        setIsNew(-1);
+        setIsBoxSet(-1);
+        setMultipack(-1);
+        setMediaFormat("");
+        setPriceFilters("");
+        setSpecialFields("");
+        setStudio("");
+        setSeason("");
+        setNumberOfDiscs(-1);
+        setTheaterDate("");
+        setStudioName("");
+        setSha("");
+    }
+
+    @Override
     public String[] getTableInsertData()
     {
         return new String[] {
@@ -397,5 +397,13 @@ public class ProductRecord extends XMLDBRecord
                 setSha(dbCursor.getString(count));
             }
         }
+    }
+
+    public static ProductRecord buildNewProductRecordFromCursor(Cursor dbCursor)
+    {
+        dbCursor.moveToFirst();
+        ProductRecord productRecord = new ProductRecord(dbCursor);
+        dbCursor.close();
+        return productRecord;
     }
 }

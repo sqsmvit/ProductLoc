@@ -206,7 +206,7 @@ public class ScanAPIApplication extends Application {
                 intent.putExtra(EXTRA_SOUND_CONFIG_FREQUENCY, frequency);
             }
             else{
-                Debug.MSG(Debug.kLevelError,"Get Sound Config Device Complete returns an error: "+result);
+                //Debug.MSG(Debug.kLevelError,"Get Sound Config Device Complete returns an error: "+result);
                 intent=new Intent(NOTIFY_ERROR_MESSAGE);
                 intent.putExtra(EXTRA_ERROR_MESSAGE,"Unable to get the device sound configuration: "+result+". Power cycle the scanner and try again.");
             }
@@ -221,7 +221,7 @@ public class ScanAPIApplication extends Application {
             long result=scanObj.getMessage().getResult();
 
             if(!SktScanErrors.SKTSUCCESS(result)){
-                Debug.MSG(Debug.kLevelError,"Set Sound Config Device Complete returns an error: "+result);
+                //Debug.MSG(Debug.kLevelError,"Set Sound Config Device Complete returns an error: "+result);
                 Intent intent=new Intent(NOTIFY_ERROR_MESSAGE);
                 intent.putExtra(EXTRA_ERROR_MESSAGE,"Unable to set the device sound configuration: "+result+". Power cycle the scanner and try again.");
                 sendBroadcast(intent);
@@ -302,10 +302,10 @@ public class ScanAPIApplication extends Application {
                     // we rely on ScanAPI reporting the error -47 ESKT_NOTHINGTOLISTEN
                     // to detect if Bluetooth is OFF, we could also have ignored this error
                     // and close ScanAPI here instead of closing ScanAPI in its onError handler
-                    Debug.MSG(Debug.kLevelTrace,"Receive Bluetooth ACTION_STATE_CHANGED with STATE_TURNING_OFF");
+                    //Debug.MSG(Debug.kLevelTrace,"Receive Bluetooth ACTION_STATE_CHANGED with STATE_TURNING_OFF");
                 }
                 else if(state==BluetoothAdapter.STATE_ON){
-                    Debug.MSG(Debug.kLevelTrace,"Receive Bluetooth ACTION_STATE_CHANGED with STATE_TURNING_ON");
+                    //Debug.MSG(Debug.kLevelTrace,"Receive Bluetooth ACTION_STATE_CHANGED with STATE_TURNING_ON");
                     // Bluetooth is ON again, check if we need to openScanApi again
                     if(_reopenScanApiWhenBluetoothIsOnAgain)
                     {
@@ -322,7 +322,7 @@ public class ScanAPIApplication extends Application {
         public boolean handleMessage(Message msg) {
             switch(msg.what){
                 case CLOSE_SCAN_API:
-                    Debug.MSG(Debug.kLevelTrace,"Receive a CLOSE SCAN API Message and View Count="+_viewCount+"ScanAPI open:"+_scanApiHelper.isScanApiOpen());
+                    //Debug.MSG(Debug.kLevelTrace,"Receive a CLOSE SCAN API Message and View Count="+_viewCount+"ScanAPI open:"+_scanApiHelper.isScanApiOpen());
                     // if we receive this message and the view count is 0
                     // and ScanAPI is open then we should close it
                     if((_viewCount==0)&&(_scanApiHelper.isScanApiOpen()==true)){
@@ -387,7 +387,7 @@ public class ScanAPIApplication extends Application {
 
         _consumerTerminatedEvent=new Event(true);
 
-        Debug.MSG(Debug.kLevelTrace,"Application onCreate");
+        //Debug.MSG(Debug.kLevelTrace,"Application onCreate");
 
         // create a ScanAPI Helper
         _scanApiHelper=new ScanApiHelper();
@@ -444,7 +444,7 @@ public class ScanAPIApplication extends Application {
                 openScanApi();
             }
             else{
-                Debug.MSG(Debug.kLevelWarning,"There is more View created without ScanAPI opened??");
+                //Debug.MSG(Debug.kLevelWarning,"There is more View created without ScanAPI opened??");
             }
         }
         else{
@@ -453,7 +453,7 @@ public class ScanAPIApplication extends Application {
             }
         }
         ++_viewCount;
-        Debug.MSG(Debug.kLevelTrace,"Increase View count, New view count: "+_viewCount);
+        //Debug.MSG(Debug.kLevelTrace,"Increase View count, New view count: "+_viewCount);
     }
 
     /**
@@ -472,15 +472,15 @@ public class ScanAPIApplication extends Application {
             // just send a CLOSE_SCAN_API request delayed by .5s
             // to give the View a chance to be recreated
             // if it was just a screen rotation
-            Debug.MSG(Debug.kLevelTrace,"Post a differed request to close ScanAPI");
+            //Debug.MSG(Debug.kLevelTrace,"Post a differed request to close ScanAPI");
             _messageHandler.sendEmptyMessageDelayed(CLOSE_SCAN_API,500);
         }
         --_viewCount;
         if(_viewCount<0){
             _viewCount=0;
-            Debug.MSG(Debug.kLevelWarning,"try to decrease more view count that possible");
+            //Debug.MSG(Debug.kLevelWarning,"try to decrease more view count that possible");
         }
-        Debug.MSG(Debug.kLevelTrace,"Decrease View count, New view count: "+_viewCount);
+        //Debug.MSG(Debug.kLevelTrace,"Decrease View count, New view count: "+_viewCount);
     }
 
     public void forceRelease()
@@ -561,16 +561,16 @@ public class ScanAPIApplication extends Application {
         _scanApiOwnership.claimOwnership();
         // check this event to be sure the previous
         // ScanAPI consumer has been shutdown
-        Debug.MSG(Debug.kLevelTrace,"Wait for the previous terminate event to be set");
+        //Debug.MSG(Debug.kLevelTrace,"Wait for the previous terminate event to be set");
 
         if(_consumerTerminatedEvent.waitFor(3000)==true){
-            Debug.MSG(Debug.kLevelTrace,"the previous terminate event has been set");
+            //Debug.MSG(Debug.kLevelTrace,"the previous terminate event has been set");
             _consumerTerminatedEvent.reset();
             _scanApiHelper.removeCommands(null);// remove all the commands
             _scanApiHelper.open();
         }
         else{
-            Debug.MSG(Debug.kLevelTrace,"the previous terminate event has NOT been set");
+            //Debug.MSG(Debug.kLevelTrace,"the previous terminate event has NOT been set");
             Intent intent=new Intent(NOTIFY_ERROR_MESSAGE);
             intent.putExtra(EXTRA_ERROR_MESSAGE,"Unable to start ScanAPI because the previous close hasn't been completed. Restart this application.");
             sendBroadcast(intent);
@@ -636,7 +636,7 @@ public class ScanAPIApplication extends Application {
          * received from ScanAPI
          */
         public void onError(long result) {
-            Debug.MSG(Debug.kLevelError,"receive an error:"+result);
+            //Debug.MSG(Debug.kLevelError,"receive an error:"+result);
             String text="ScanAPI is reporting an error: "+result;
             if(result==SktScanErrors.ESKT_UNABLEINITIALIZE)
                 text="Unable to initialize the scanner. Please power cycle the scanner.";

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,12 +11,40 @@
     tools:context="com.sqsmv.productloc.ScanActivity">
 
     <TableLayout
+        android:id="@+id/scanTableLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="0dp"
+        android:layout_alignParentTop="true"
         android:orientation="vertical"
         android:padding="2dp">
 
+
+        <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="4dp"
+            >
+
+            <Button
+                android:id="@+id/locate_button"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:text="Locate" />
+            <Button
+                android:id="@+id/admin_button"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:text="Admin" />
+            <Button
+                android:id="@+id/pair_button"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:text="Pair" />
+        </TableRow>
 
         <TableRow
             android:layout_width="wrap_content"
@@ -39,8 +68,6 @@
                 />
         </TableRow>
 
-
-
         <TableRow
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -60,9 +87,33 @@
                 android:layout_weight="1.5"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceMedium"
+                android:singleLine="true"
+                android:inputType="number"
+                android:imeOptions="actionDone"
                 />
         </TableRow>
 
+        <TableRow
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="4dp"
+            >
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:paddingBottom="0dp"
+                android:text="Building: "
+                android:textAppearance="?android:attr/textAppearanceMedium"/>
+            <Spinner
+                android:id="@+id/buildings"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1.5">
+
+            </Spinner>
+        </TableRow>
         <TableRow
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -118,13 +169,13 @@
                 android:layout_height="36dp"
                 android:layout_weight="1"
                 android:paddingBottom="0dp"
-                android:text="Grid (1-20): "
+                android:text="Grid (1-99): "
                 android:textAppearance="?android:attr/textAppearanceMedium"/>
             <Spinner
+                android:id="@+id/rowIds"
                 android:layout_width="0dp"
                 android:layout_height="36dp"
-                android:layout_weight="1.5"
-                android:id="@+id/rowIds">
+                android:layout_weight="1.5">
 
             </Spinner>
         </TableRow>
@@ -147,29 +198,15 @@
                 android:layout_weight="2"
                 android:id="@+id/commit_button"
                 android:text="Commit" />
-            <Button
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:id="@+id/pair_button"
-                android:text="Pair" />
 
         </TableRow>
 
-        <TableRow
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:layout_marginBottom="4dp"
-            android:visibility="gone"
-            >
-
-            <ListView
-                android:id="@+id/scannedList"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
-
-        </TableRow>
+    <ListView
+        android:id="@+id/scannedList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/scanTableLayout"
+        android:layout_alignParentBottom="true"/>
 
     </TableLayout>
 

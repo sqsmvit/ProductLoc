@@ -11,6 +11,8 @@ import android.util.Log;
 
 import com.sqsmv.productloc.database.DBAdapter;
 import com.sqsmv.productloc.database.XMLDBAccess;
+import com.sqsmv.productloc.database.inventory.InventoryAccess;
+import com.sqsmv.productloc.database.prodloc.ProdLocAccess;
 import com.sqsmv.productloc.database.product.ProductAccess;
 import com.sqsmv.productloc.database.upc.UPCAccess;
 
@@ -31,7 +33,7 @@ public class PopDatabaseService extends IntentService
 {
 	private static final String TAG = "PopDatabaseService";
 
-    private String zipFileName = "files.zip";
+    private String zipFileName = "pfiles.zip";
 	
 	public PopDatabaseService()
     {
@@ -43,6 +45,7 @@ public class PopDatabaseService extends IntentService
     {
         makeNotification("Dropbox Download Started", false);
         DBAdapter dbAdapter = new DBAdapter(this);
+        boolean isLockReleased = false;
 
         //Download files.zip from DropBox
         downloadDBXZip();
@@ -55,27 +58,34 @@ public class PopDatabaseService extends IntentService
             resetTables(dbAdapter);
             makeNotification("Database Update Started", false);
 
-            XMLDBAccess[] xmlDBAccesses = new XMLDBAccess[]{new ProductAccess(dbAdapter), new UPCAccess(dbAdapter)};
+            XMLDBAccess[] necessaryUpdateThreads = new XMLDBAccess[]{new ProdLocAccess(dbAdapter), new UPCAccess(dbAdapter)};
+            XMLDBAccess[] otherDataAccesses = new XMLDBAccess[]{new ProductAccess(dbAdapter), new InventoryAccess(dbAdapter)};
             ArrayList<Thread> updateThreads = new ArrayList<Thread>();
-            for(XMLDBAccess xmlDBAccess : xmlDBAccesses)
+            XMLDBAccess[][] allXMLDBAccesses = new XMLDBAccess[][] {necessaryUpdateThreads, otherDataAccesses};
+            for(XMLDBAccess[] xmlDBAccesses : allXMLDBAccesses)
             {
-                FMDumpHandler xmlHandler = new FMDumpHandler(xmlDBAccess);
-                Thread updateThread = new Thread(xmlHandler, xmlDBAccess.getTableName());
-                updateThreads.add(updateThread);
+                for(XMLDBAccess xmlDBAccess : xmlDBAccesses)
+                {
+                    updateThreads.add(new FMDumpHandler(xmlDBAccess));
+                }
             }
 
             if(Utilities.totalDeviceMemory(this) <= 1024)
             {
-                startSlowUpdateThreads(updateThreads);
+                isLockReleased = startSlowUpdateThreads(updateThreads, necessaryUpdateThreads.length);
             }
             else
             {
-                startFastUpdateThreads(updateThreads);
+                isLockReleased = startFastUpdateThreads(updateThreads, necessaryUpdateThreads.length);
             }
         }
         catch(IOException e)
         {
             e.printStackTrace();
+        }
+        if(!isLockReleased)
+        {
+            UpdateLauncher.releaseUpdateLock();
         }
         dbAdapter.close();
         makeNotification("Database Update Finished", true);
@@ -148,10 +158,12 @@ public class PopDatabaseService extends IntentService
 		mNotificationManager.notify(0, mBuilder.build());
 	}
 
-    private void startSlowUpdateThreads(ArrayList<Thread> updateThreads)
+    private boolean startSlowUpdateThreads(ArrayList<Thread> updateThreads, int numNecessaryUpdates)
     {
         Log.d(TAG, "Slow Update");
         int count = 0;
+        int countJoined = 0;
+        boolean isLockReleased = false;
         while(!updateThreads.isEmpty())
         {
             Thread updateThread = updateThreads.get(count);
@@ -170,15 +182,24 @@ public class PopDatabaseService extends IntentService
                     {
                         e.printStackTrace();
                     }
+                    countJoined++;
+                    if(countJoined == numNecessaryUpdates)
+                    {
+                        UpdateLauncher.releaseUpdateLock();
+                        isLockReleased = true;
+                    }
                 }
                 count = 0;
             }
         }
+        return isLockReleased;
     }
 
-    private void startFastUpdateThreads(ArrayList<Thread> updateThreads)
+    private boolean startFastUpdateThreads(ArrayList<Thread> updateThreads, int numNecessaryUpdates)
     {
         Log.d(TAG, "Fast Update");
+        int count = 0;
+        boolean isLockReleased = false;
         for(Thread updateThread : updateThreads)
         {
             updateThread.start();
@@ -193,7 +214,14 @@ public class PopDatabaseService extends IntentService
             {
                 e.printStackTrace();
             }
+            count++;
+            if(count == numNecessaryUpdates)
+            {
+                UpdateLauncher.releaseUpdateLock();
+                isLockReleased = true;
+            }
         }
+        return isLockReleased;
     }
 
     private void resetTables(DBAdapter dbAdapter)
@@ -201,9 +229,9 @@ public class PopDatabaseService extends IntentService
         DroidConfigManager droidConfigManager = new DroidConfigManager(this);
         Date currentDate = new Date();
 
-        //LensAccess lensAccess = new LensAccess(dbAdapter);
-        //lensAccess.open();
-        //lensAccess.reset();
+        ProdLocAccess prodLocAccess = new ProdLocAccess(dbAdapter);
+        prodLocAccess.open();
+        prodLocAccess.reset();
 
         /*
         try

@@ -6,25 +6,25 @@ public class ProductContract implements XMLDBContract
 {
     protected static final String TABLE_NAME = "Product";
     protected static final String XML_FILE_NAME = "product2.xml";
-    protected static final String COLUMN_NAME_MASNUM = "masnum";
-    protected static final String COLUMN_NAME_NAME = "name";
-    protected static final String COLUMN_NAME_CATEGORY = "category";
-    protected static final String COLUMN_NAME_RATING = "rating";
-    protected static final String COLUMN_NAME_STREETDATE = "streetdate";
-    protected static final String COLUMN_NAME_TITLEFILM = "titlefilm";
-    protected static final String COLUMN_NAME_NOCOVER = "nocover";
-    protected static final String COLUMN_NAME_PRICELIST = "pricelist";
-    protected static final String COLUMN_NAME_ISNEW = "isnew";
-    protected static final String COLUMN_NAME_ISBOXSET = "isboxset";
-    protected static final String COLUMN_NAME_MULTIPACK = "multipack";
-    protected static final String COLUMN_NAME_MEDIAFORMAT = "mediaformat";
-    protected static final String COLUMN_NAME_PRICEFILTERS = "pricefilters";
-    protected static final String COLUMN_NAME_SPECIALFIELDS = "specialfields";
-    protected static final String COLUMN_NAME_STUDIO = "studio";
-    protected static final String COLUMN_NAME_SEASON = "season";
-    protected static final String COLUMN_NAME_NUMBEROFDISCS = "numberofdiscs";
-    protected static final String COLUMN_NAME_THEATERDATE = "theaterdate";
-    protected static final String COLUMN_NAME_STUDIONAME = "studioname";
+    public static final String COLUMN_NAME_MASNUM = "masnum";
+    public static final String COLUMN_NAME_NAME = "name";
+    public static final String COLUMN_NAME_CATEGORY = "category";
+    public static final String COLUMN_NAME_RATING = "rating";
+    public static final String COLUMN_NAME_STREETDATE = "streetdate";
+    public static final String COLUMN_NAME_TITLEFILM = "titlefilm";
+    public static final String COLUMN_NAME_NOCOVER = "nocover";
+    public static final String COLUMN_NAME_PRICELIST = "pricelist";
+    public static final String COLUMN_NAME_ISNEW = "isnew";
+    public static final String COLUMN_NAME_ISBOXSET = "isboxset";
+    public static final String COLUMN_NAME_MULTIPACK = "multipack";
+    public static final String COLUMN_NAME_MEDIAFORMAT = "mediaformat";
+    public static final String COLUMN_NAME_PRICEFILTERS = "pricefilters";
+    public static final String COLUMN_NAME_SPECIALFIELDS = "specialfields";
+    public static final String COLUMN_NAME_STUDIO = "studio";
+    public static final String COLUMN_NAME_SEASON = "season";
+    public static final String COLUMN_NAME_NUMBEROFDISCS = "numberofdiscs";
+    public static final String COLUMN_NAME_THEATERDATE = "theaterdate";
+    public static final String COLUMN_NAME_STUDIONAME = "studioname";
 
     @Override
     public String getTableName()
@@ -35,7 +35,7 @@ public class ProductContract implements XMLDBContract
     @Override
     public String getTableCreateString()
     {
-        return "CREATE TABLE " + getTableName() + " (" +
+        return "CREATE TABLE IF NOT EXISTS " + getTableName() + " (" +
                 COLUMN_NAME_MASNUM + " TEXT PRIMARY KEY, " +
                 COLUMN_NAME_NAME + " TEXT, " +
                 COLUMN_NAME_CATEGORY + " TEXT, " +

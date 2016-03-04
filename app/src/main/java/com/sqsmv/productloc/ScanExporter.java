@@ -11,18 +11,15 @@ public class ScanExporter {
     public static boolean exportScan(Context callingContext, File exportFile, int exportMode, boolean fromCommit)
     {
         String exportPath = "/Default/";
-/*
-        if(exportMode == 1 || exportMode == 2)
-            exportPath = "/PullScan/";
-        else if(exportMode == 3)
-            exportPath = "/BB/";
-        else if(exportMode == 4)
-            exportPath = "/Drew/";
-        else if(exportMode == 5)
-            exportPath = "/RI/";
-        else if(exportMode == 6)
-            exportPath = "/Skid/";
-*/
+
+        if(exportMode == 1)
+        {
+            exportPath = "/FMImport/";
+        }
+        else if(exportMode == 2)
+        {
+            exportPath = "/LocateScan/";
+        }
 
         return exportDBX(callingContext, exportFile, exportPath, fromCommit);
     }

@@ -4,6 +4,9 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import com.sqsmv.productloc.database.findscan.FindScanContract;
+import com.sqsmv.productloc.database.inventory.InventoryContract;
+import com.sqsmv.productloc.database.prodloc.ProdLocContract;
 import com.sqsmv.productloc.database.scan.ScanContract;
 import com.sqsmv.productloc.database.product.ProductContract;
 import com.sqsmv.productloc.database.upc.UPCContract;
@@ -13,10 +16,10 @@ public class DBAdapter extends SQLiteOpenHelper
 {
     private static final String DATABASE_NAME = "ProdLocDB";
 
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 4;
 
-    private static final XMLDBContract[] xmlContracts = {new ProductContract(), new UPCContract()};
-    private static final DBContract[] scanContracts = {new ScanContract()};
+    private static final XMLDBContract[] xmlContracts = {new ProductContract(), new UPCContract(), new ProdLocContract(), new InventoryContract()};
+    private static final DBContract[] scanContracts = {new ScanContract(), new FindScanContract()};
 
     public DBAdapter(Context ctx)
     {
@@ -34,6 +37,7 @@ public class DBAdapter extends SQLiteOpenHelper
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion)
     {
         resetTables(db, xmlContracts);
+        createTables(db, scanContracts);
     }
 
     public void resetImportData()

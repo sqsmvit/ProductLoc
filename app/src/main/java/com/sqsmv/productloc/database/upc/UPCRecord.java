@@ -3,6 +3,7 @@ package com.sqsmv.productloc.database.upc;
 import android.database.Cursor;
 
 import com.sqsmv.productloc.database.XMLDBRecord;
+import com.sqsmv.productloc.database.product.ProductRecord;
 
 public class UPCRecord extends XMLDBRecord
 {
@@ -19,15 +20,7 @@ public class UPCRecord extends XMLDBRecord
 
     public UPCRecord(Cursor dbCursor)
     {
-        super(new UPCContract());
-        upc = "";
-        masNum = "";
-        setSha("");
-        if(dbCursor.moveToFirst())
-        {
-            buildWithCursor(dbCursor);
-            dbCursor.close();
-        }
+        super(new UPCContract(), dbCursor);
     }
 
     public String getUPC()
@@ -48,6 +41,14 @@ public class UPCRecord extends XMLDBRecord
     public void setMasNum(String masNum)
     {
         this.masNum = masNum;
+    }
+
+    @Override
+    public void initRecord()
+    {
+        setUPC("");
+        setMasNum("");
+        setSha("");
     }
 
     @Override
@@ -76,5 +77,13 @@ public class UPCRecord extends XMLDBRecord
                 setSha(dbCursor.getString(count));
             }
         }
+    }
+
+    public static UPCRecord buildNewUPCRecordFromCursor(Cursor dbCursor)
+    {
+        dbCursor.moveToFirst();
+        UPCRecord upcRecord = new UPCRecord(dbCursor);
+        dbCursor.close();
+        return upcRecord;
     }
 }

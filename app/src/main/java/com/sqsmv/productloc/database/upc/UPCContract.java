@@ -6,8 +6,8 @@ public class UPCContract implements XMLDBContract
 {
     protected static final String TABLE_NAME = "UPC";
     protected static final String XML_FILE_NAME = "upc.xml";
-    protected static final String COLUMN_NAME_UPC = "upc";
-    protected static final String COLUMN_NAME_MASNUM = "masnum";
+    public static final String COLUMN_NAME_UPC = "upc";
+    public static final String COLUMN_NAME_MASNUM = "masnum";
 
     @Override
     public String getTableName()
@@ -18,7 +18,7 @@ public class UPCContract implements XMLDBContract
     @Override
     public String getTableCreateString()
     {
-        return "CREATE TABLE " + getTableName() + " (" +
+        return "CREATE TABLE IF NOT EXISTS " + getTableName() + " (" +
                 COLUMN_NAME_UPC + " TEXT PRIMARY KEY, " +
                 COLUMN_NAME_MASNUM + " TEXT, " +
                 COLUMN_NAME_SHA + " TEXT);";

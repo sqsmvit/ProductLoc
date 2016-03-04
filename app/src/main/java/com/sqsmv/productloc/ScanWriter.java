@@ -4,6 +4,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.os.Environment;
 
+import com.sqsmv.productloc.database.findscan.FindScanContract;
 import com.sqsmv.productloc.database.scan.ScanContract;
 
 import java.io.File;
@@ -41,9 +42,7 @@ public class ScanWriter {
         //Skip pKey
         for(int i = 0; i < columnCount; i++)
         {
-           // writeString = dbCursor.getString(count);
-
-            if (dbCursor.getColumnName(i).equals(ScanContract.COLUMN_NAME_CREATESTAMP)){
+            if (dbCursor.getColumnName(i).equals(ScanContract.COLUMN_NAME_CREATESTAMP) || dbCursor.getColumnName(i).equals(FindScanContract.COLUMN_NAME_CREATESTAMP)){
                 writeString += getFMFormattedTimeStamp(dbCursor.getString(i));
             } else {
                 writeString += dbCursor.getString(i);
@@ -76,23 +75,12 @@ public class ScanWriter {
     {
         String fileName =  Utilities.getDeviceName() + "_" + Utilities.buildCurrentTimestamp() + ".txt";
 
-/*
         switch(exportMode)
         {
-            case 3:
-                fileName = "BB_" + fileName;
-                break;
-            case 4:
-                fileName = "DR_" + fileName;
-                break;
-            case 5:
-                fileName = "RI_" + fileName;
-                break;
-            case 6:
-                fileName = "S_" + fileName;
+            case 2:
+                fileName = "LOC_" + fileName;
                 break;
         }
-*/
 
         return fileName;
     }
@@ -103,4 +91,5 @@ public class ScanWriter {
         root.mkdirs();
         File backupFile = new File(root.getAbsolutePath(), "B_" + exportFile.getName());
         Utilities.copyFile(exportFile, backupFile);
-    }}
+    }
+}

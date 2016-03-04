@@ -16,6 +16,17 @@ public abstract class XMLDBRecord extends DBRecord
         this.xmlDBContract = xmlDBContract;
     }
 
+    public XMLDBRecord(XMLDBContract xmlDBContract, Cursor dbCursor)
+    {
+        super(xmlDBContract);
+        this.xmlDBContract = xmlDBContract;
+        initRecord();
+        if(!dbCursor.isBeforeFirst() && !dbCursor.isAfterLast())
+        {
+            buildWithCursor(dbCursor);
+        }
+    }
+
     public String getSha()
     {
         return sha;

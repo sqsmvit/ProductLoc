@@ -20,7 +20,7 @@ public class ScanRecord extends DBRecord
     private String room;
     private String col;
     private String row;
-    private Date   createstamp;
+    private Date createstamp;
 
     public ScanRecord(String id, String masNum, String building, String room, String col, String row)
     {
@@ -42,12 +42,7 @@ public class ScanRecord extends DBRecord
 
     public ScanRecord(Cursor dbCursor)
     {
-        this("","","","","");
-        if(dbCursor.moveToFirst())
-        {
-            buildWithCursor(dbCursor);
-            dbCursor.close();
-        }
+        super(new ScanContract(), dbCursor);
     }
 
     public String initDate()
@@ -111,6 +106,18 @@ public class ScanRecord extends DBRecord
 
     public void setRow(String row) {
         this.row = row;
+    }
+
+    @Override
+    public void initRecord()
+    {
+        setId("null");
+        setMasNum("");
+        setBuilding("");
+        setRoom("");
+        setCol("");
+        setRow("");
+        createstamp = new Date();
     }
 
     @Override

@@ -1,8 +1,13 @@
 <resources>
     <string name="app_name">SQS ProductLoc</string>
+        <string name="buildingValues">
+	       { "A": "Reading",
+	        "B": "Pottstown" }</string>
     <string name="roomNameValues">
 	       { "W1": \"Warehouse 1\",
 	        "W2": \"Warehouse 2\",
+            "W3": \"Warehouse 3\",
+	        "W4": \"Warehouse 4\",
 	        "ST": \"Sorting\",
 	        "BF": \"Buffing\",
 	        "TF": \"Three Four\",

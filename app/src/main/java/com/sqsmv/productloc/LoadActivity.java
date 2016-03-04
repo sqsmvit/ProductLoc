@@ -55,22 +55,13 @@ public class LoadActivity extends Activity {
         Log.d(TAG, "in onResume and for the LoadActivity!");
         super.onResume();
 
-        if(Utilities.checkWifi(this))
+        if(dropboxManager.finishAuthentication())
         {
-            if(dropboxManager.finishAuthentication())
-            {
-                String accessToken = dropboxManager.getOAuth2AccessToken();
-                appConfig.accessString(DroidConfigManager.DROPBOX_ACCESS_TOKEN, accessToken, "");
-            }
-            linkDropboxAccount();
-            updateLauncher = new UpdateLauncher(this);
+            String accessToken = dropboxManager.getOAuth2AccessToken();
+            appConfig.accessString(DroidConfigManager.DROPBOX_ACCESS_TOKEN, accessToken, "");
         }
-        else
-        {
-            Utilities.makeLongToast(this, getString(R.string.ERR_WIFI));
-            finish();
-        }
-
+        linkDropboxAccount();
+        updateLauncher = new UpdateLauncher(this);
     }
 
     private void linkDropboxAccount()
@@ -82,9 +73,14 @@ public class LoadActivity extends Activity {
         {
             dropboxManager.setStaticOAuth2AccessToken(accessToken);
         }
-        else
+        else if(Utilities.checkWifi(this))
         {
             dropboxManager.linkDropboxAccount();
+        }
+        else
+        {
+            Utilities.makeLongToast(this, "Must be connected to WiFi to link to Dropbox!");
+            finish();
         }
     }
 
@@ -94,7 +90,7 @@ public class LoadActivity extends Activity {
 
         String buildDate = Utilities.formatYYMMDDDate(new Date());
 
-        if(!(buildDate.equals(appConfig.accessString(DroidConfigManager.BUILD_DATE, null, ""))))
+        if(!buildDate.equals(appConfig.accessString(DroidConfigManager.BUILD_DATE, null, "")) && Utilities.checkWifi(this))
         {
             if(updateLauncher.checkNeedAppUpdate())
             {
@@ -108,9 +104,13 @@ public class LoadActivity extends Activity {
                 appConfig.accessString(DroidConfigManager.BUILD_DATE, buildDate, "");
             }
         }
-        else
+        else if(buildDate.equals(appConfig.accessString(DroidConfigManager.BUILD_DATE, null, "")))
         {
             goToScanActivity();
+        }
+        else
+        {
+            Utilities.makeToast(this, getString(R.string.ERR_WIFI));
         }
     }
 
@@ -118,7 +118,7 @@ public class LoadActivity extends Activity {
     {
         Log.d(TAG, "in launchDBUpdate and for the LoadActivity!");
 
-        final Thread blockingThread = updateLauncher.startDBUpdate(true);
+        final Thread blockingThread = updateLauncher.startDBUpdate();
         //about this thread ... it's a GUI thing
         new Thread()
         {

@@ -231,7 +231,7 @@ public class ScanApiHelper {
 	 * remove the pending commands for a specific device
 	 * or all the pending commands if null is passed as
 	 * iDevice parameter
-	 * @param iDevice reference to the device for which
+	 * @param device reference to the device for which
 	 * the commands must be removed from the list or <b>null</b>
 	 * if all the commands must be removed.
 	 */
@@ -679,7 +679,7 @@ public class ScanApiHelper {
 	 * 
 	 * Set the Profile Config of the Device
 	 * @param device
-	 * @param hostddress should be in the form 112233445566 without colons.
+	 * @param hostAddress should be in the form 112233445566 without colons.
 	 */
 	public void postSetProfileConfigDevice(DeviceInfo device, String hostAddress,ICommandContextCallback callback) {
 		ISktScanObject newScanObj=SktClassFactory.createScanObject();
@@ -713,7 +713,7 @@ public class ScanApiHelper {
 	 * 
 	 * Disconnect the device
 	 * @param device
-	 * @param suffix
+	 * @param callback
 	 */
 	public void postSetDisconnectDevice(DeviceInfo device, ICommandContextCallback callback) {
 		ISktScanObject newScanObj=SktClassFactory.createScanObject();
@@ -730,7 +730,7 @@ public class ScanApiHelper {
 	 * 
 	 * Configure the Overlay View of the Softscan
 	 * @param device
-	 * @param overlay view object
+	 * @param overlayview view object
 	 */
 	public void postSetOverlayView(DeviceInfo device, Object overlayview,ICommandContextCallback callback) {
 		ISktScanObject newScanObj=SktClassFactory.createScanObject();
@@ -747,7 +747,7 @@ public class ScanApiHelper {
 	 * 
 	 * start or stop the trigger
 	 * @param device
-	 * @param start or stop
+	 * @param action start or stop
 	 */
 	public void postSetTriggerDevice(DeviceInfo device, char action,ICommandContextCallback callback) {
 		ISktScanObject newScanObj=SktClassFactory.createScanObject();
@@ -951,20 +951,20 @@ public class ScanApiHelper {
 							}
 							else
 							{
-								Debug.MSG(Debug.kLevelTrace,"About to close ScanAPI");
+								////Debug.MSG(Debug.kLevelTrace,"About to close ScanAPI");
 								_scanApi.Close();
-								Debug.MSG(Debug.kLevelTrace,"ScanAPI close, about to kill the consummer task");
+								////Debug.MSG(Debug.kLevelTrace,"ScanAPI close, about to kill the consummer task");
 								_scanApiConsumer.cancel();
-								Debug.MSG(Debug.kLevelTrace,"Consummer task killed");
+								////Debug.MSG(Debug.kLevelTrace,"Consummer task killed");
 								if(_notification!=null)
 									_notification.onScanApiTerminated();
 							}
 						}
 						else{
 							
-							Debug.MSG(Debug.kLevelTrace,"About to close ScanAPI");
+							////Debug.MSG(Debug.kLevelTrace,"About to close ScanAPI");
 							_scanApi.Close();
-							Debug.MSG(Debug.kLevelTrace,"ScanAPI close, about to kill the consummer task");
+							////Debug.MSG(Debug.kLevelTrace,"ScanAPI close, about to kill the consummer task");
 							_scanApiConsumer.cancel();
 							if(_notification!=null){
 								_notification.onErrorRetrievingScanObject(result);
@@ -1004,7 +1004,7 @@ public class ScanApiHelper {
 		{
 			result=scanObj.getMessage().getResult();
 			CommandContext command=(CommandContext)scanObj.getProperty().getContext();
-			Debug.MSG(Debug.kLevelTrace,"Complete event received for Context:"+command+"\n");
+			//Debug.MSG(Debug.kLevelTrace,"Complete event received for Context:"+command+"\n");
 			if(command!=null){
 				if(!SktScanErrors.SKTSUCCESS(result)){
 					if(command.getRetries()>=MAX_RETRIES){
@@ -1023,7 +1023,7 @@ public class ScanApiHelper {
 				if(remove==true)
 				{
 					synchronized(_commandContexts){
-						Debug.MSG(Debug.kLevelTrace,"Remove command from the list\n");
+						//Debug.MSG(Debug.kLevelTrace,"Remove command from the list\n");
 						_commandContexts.removeElement(command);
 					}
 				}
@@ -1050,10 +1050,9 @@ public class ScanApiHelper {
 		
 		synchronized(_commandContexts){
 			if(_commandContexts.isEmpty()==false){
-				Debug.MSG(Debug.kLevelTrace,"There are some commands to send\n");
+				//Debug.MSG(Debug.kLevelTrace,"There are some commands to send\n");
 				CommandContext command=(CommandContext)_commandContexts.firstElement();
-				Debug.MSG(Debug.kLevelTrace,"And this one has status="+command.getStatus()+" for command: "+
-					 command.getScanObject().getProperty().getID());
+				//Debug.MSG(Debug.kLevelTrace,"And this one has status="+command.getStatus()+" for command: "+ command.getScanObject().getProperty().getID());
 				if(command.getStatus()==CommandContext.statusReady)
 				{
 					result=command.DoGetOrSetProperty();
@@ -1063,13 +1062,13 @@ public class ScanApiHelper {
 						// we can ignore it
 						if(result==SktScanErrors.ESKT_NOTSUPPORTED)
 						{
-							Debug.MSG(Debug.kLevelWarning,"Remove an unsupported command\n");
+							//Debug.MSG(Debug.kLevelWarning,"Remove an unsupported command\n");
 						}
 						// case where the device handle is invalid (propably disconnected)
 						// we can ignore it
 						else if(result==SktScanErrors.ESKT_INVALIDHANDLE)
 						{
-							Debug.MSG(Debug.kLevelWarning,"Remove a command with an invalid handle\n");
+							//Debug.MSG(Debug.kLevelWarning,"Remove a command with an invalid handle\n");
 						}
 					}
 				}
@@ -1084,11 +1083,11 @@ public class ScanApiHelper {
 		{
 			if(newCommand.getScanObject().getProperty().getID()==
 				ISktScanProperty.propId.kSktScanPropIdAbort){
-				Debug.MSG(Debug.kLevelTrace,"About to Add a ScanAPI Abort command so remove all previous commands");
+				//Debug.MSG(Debug.kLevelTrace,"About to Add a ScanAPI Abort command so remove all previous commands");
 				_commandContexts.removeAllElements();
 			}
 			_commandContexts.addElement(newCommand);
-			Debug.MSG(Debug.kLevelTrace,"Add a new command to send");
+			//Debug.MSG(Debug.kLevelTrace,"Add a new command to send");
 		}
 	}
 	
@@ -1114,7 +1113,7 @@ public class ScanApiHelper {
 			doGetOrSetComplete(scanObject);
 			break;
 		case ISktScanMsg.kSktScanMsgIdTerminate:
-			Debug.MSG(Debug.kLevelTrace,"Receive a Terminate event, ask to close ScanAPI");
+			//Debug.MSG(Debug.kLevelTrace,"Receive a Terminate event, ask to close ScanAPI");
 			closeScanApi=true;
 			break;
 		case ISktScanMsg.kSktScanMsgEvent:

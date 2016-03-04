@@ -1,8 +1,10 @@
 package com.sqsmv.productloc;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
@@ -12,8 +14,11 @@ import android.util.Pair;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -42,10 +47,6 @@ public class ScanActivity extends Activity {
     private static final String TAG = "ScanActivity";
 
 
-    //A = Reading, B = Pottstown
-    private static final String BUILDING = "B";
-
-
     private DroidConfigManager appConfig;
     private DBAdapter dbAdapter;
     private ProductAccess productAccess;
@@ -53,17 +54,23 @@ public class ScanActivity extends Activity {
     private ScanAccess scanAccess;
     private Pattern upcRegex;
     private Pattern sqsRegex;
+    private Spinner buildingSpinner;
     private Spinner roomSpinner;
     private Spinner colSpinner;
     private Spinner rowSpinner;
     private EditText productScan;
+    private ListView scannedList;
     private Pattern locRegex;
     private Pair<Integer, String> kvRooms;
     private Pair<Integer, String> kvCols;
     private Pair<Integer, String> kvRows;
     //private JSONObject json;
+    private LinkedHashMap<String, String> buildingHashMap;
     private LinkedHashMap<String, String> roomHashMap;
     private TextView totalScans;
+
+    private SimpleCursorAdapter scannedListAdapter;
+    private boolean isLoadingNewActivity;
 
 
     @Override
@@ -81,15 +88,24 @@ public class ScanActivity extends Activity {
 
         upcRegex = Pattern.compile("^\\d{12,13}(-N)?$");
         sqsRegex = Pattern.compile("^SQS(\\d+)\\d{3}$");
-        locRegex = Pattern.compile("^B(\\w{2})([A-T_])([0-2_][0-9_])$");
+        locRegex = Pattern.compile("^([AB])(\\w{2})([A-T_])([0-9_][0-9_])$");
 
+        buildingHashMap = new LinkedHashMap<String, String>();
         roomHashMap = new LinkedHashMap<String, String>();
         totalScans = (TextView)findViewById(R.id.totalScans);
         productScan = (EditText)findViewById(R.id.productScan);
+        buildingSpinner = (Spinner)findViewById(R.id.buildings);
         roomSpinner = (Spinner)findViewById(R.id.roomNames);
         colSpinner = (Spinner)findViewById(R.id.colIds);
         rowSpinner = (Spinner)findViewById(R.id.rowIds);
+        scannedList = (ListView)findViewById(R.id.scannedList);
 
+        scannedListAdapter = new SimpleCursorAdapter(this, R.layout.row_scan, null,
+                new String[]{"masNum", "room", "col", "row", "name"},
+                new int[]{R.id.infoScanID, R.id.infoScanRoom, R.id.infoScanCol, R.id.infoScanRow, R.id.infoScanTitle}, 0);
+
+        scannedList.setAdapter(scannedListAdapter);
+        populateBuildings();
         populateRooms();
         populateCols();
         populateRows();
@@ -118,33 +134,20 @@ public class ScanActivity extends Activity {
         super.onResume();
         Log.d(TAG, "in onResume");
 
-        //setConfig();
-        //displayLocation();
-
         productAccess.open();
         upcAccess.open();
         scanAccess.open();
 
         populateCounts();
+        updateScannedList();
 
-        //updateProductModeFieldVisibility(!isSkidScanMode);
-/*        if(!isAutoCountMode || isManualCountMode)
-        {
-            enableQuantityInput();
-        }
-        else
-        {
-            quantityInput.setText(autoCountVal);
-            disableQuantityInput();
-        }*/
+        isLoadingNewActivity = false;
 
         String buildDate = Utilities.formatYYMMDDDate(new Date());
         if(!(buildDate.equals(appConfig.accessString(DroidConfigManager.BUILD_DATE, null, ""))))
         {
             finish();
         }
-//ToDo: Uncomment crap
-        //displayScannedRecordCount();
     }
 
 
@@ -156,7 +159,7 @@ public class ScanActivity extends Activity {
         boolean scannerLock = appConfig.accessBoolean(DroidConfigManager.SCANNER_LOCK, null, false);
         unregisterReceiver(receiver);
 
-        if(!scannerLock)
+        if(!scannerLock && !isLoadingNewActivity)
         {
             ScanAPIApplication.getApplicationInstance().forceRelease();
         }
@@ -222,45 +225,84 @@ public class ScanActivity extends Activity {
             }
         });
 
-        findViewById(R.id.pair_button).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.locate_button).setOnClickListener(new View.OnClickListener()
+        {
             @Override
-            public void onClick(View v) {
+            public void onClick(View v)
+            {
+                goToLocate();
+            }
+        });
+
+        findViewById(R.id.admin_button).setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                goToAdmin();
+            }
+        });
+
+        findViewById(R.id.pair_button).setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
                 goToPair();
             }
         });
 
-        //roomSpinner.setOnClickListener();
-
+        scannedList.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener()
+        {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id)
+            {
+                deleteRow(position);
+                return true;
+            }
+        });
 
         productScan.setOnEditorActionListener(scanFieldListener);
 
     }
 
-    private String getLinkedHashMapSpinnerKey(Spinner spinner){
-        String roomValue = roomSpinner.getSelectedItem().toString();
-        if (roomValue.length() > 0 ){
-            return roomValue.substring(0, 2);
+    private String getLinkedHashMapSpinnerKey(Spinner spinner) {
+        String value = spinner.getSelectedItem().toString();
+        if (!value.equals("=") ) {
+            return value.split("=")[0];
         }
         else {
             return "";
         }
     }
 
-
-
     private void goToSubmit() {
-
         handleInputs(productScan.getText().toString(),
+                getLinkedHashMapSpinnerKey(buildingSpinner),
                 getLinkedHashMapSpinnerKey(roomSpinner),
                 rowSpinner.getSelectedItem().toString(),
                 colSpinner.getSelectedItem().toString());
     }
 
+    private void goToLocate() {
+        Log.d(TAG, "in goToLocateActivity and for the ScanActivity!");
+        isLoadingNewActivity = true;
 
+        Intent intent = new Intent(this, FindScanActivity.class);
+        startActivity(intent);
+    }
 
+    private void goToAdmin() {
+        Log.d(TAG, "in goToLocateActivity and for the ScanActivity!");
+        isLoadingNewActivity = true;
 
-    private void goToPair(){
+        Intent intent = new Intent(this, AdminActivity.class);
+        startActivity(intent);
+    }
+
+    private void goToPair() {
         Log.d(TAG, "in goToPairActivity and for the ScanActivity!");
+        isLoadingNewActivity = true;
 
         Intent intent = new Intent(this, SocketMobilePairActivity.class);
         startActivity(intent);
@@ -269,16 +311,16 @@ public class ScanActivity extends Activity {
 
     private void goToCommit()
     {
-
+        if(scanAccess.getTotalScans() > 0)
+        {
             if(Utilities.checkWifi(this))
             {
                 try
                 {
-                    File exportFile = writeFromDB();
                     int exportModeChoice = 1; /* set to 1 ... allows for multiple exportModeChoice */
+                    File exportFile = writeFromDB(exportModeChoice);
                     ScanExporter.exportScan(this, exportFile, exportModeChoice, true);
                     performMassDelete();
-                    //fileExported = true;
                 }
                 catch(IOException e)
                 {
@@ -288,31 +330,30 @@ public class ScanActivity extends Activity {
             }
             else
             {
-                Utilities.makeLongToast(this, "Not Connected to WiFi - Cannot Commit Scan.");
+                Utilities.makeToast(this, "Not Connected to WiFi - Cannot Commit Scan.");
             }
-
+        }
+        else
+        {
+            Utilities.makeToast(this, "No Scans to Commit.");
+        }
     }
 
     private void performMassDelete()
     {
         scanAccess.deleteAll();
         populateCounts();
-        //pullAdapter.notifyDataSetChanged();
+        updateScannedList();
     }
 
-
-
-    private File writeFromDB() throws IOException
+    private File writeFromDB(int exportModeChoice) throws IOException
     {
-        int exportModeChoice = 1; /* means nothing yet */
         Cursor exportCursor = scanAccess.selectScansForPrint(exportModeChoice);
         File exportFile = ScanWriter.createExportFile(this, exportCursor, exportModeChoice);
         ScanWriter.writeBackupFile(exportFile);
 
         return exportFile;
     }
-
-
 
     private final BroadcastReceiver receiver = new BroadcastReceiver()
     {
@@ -330,18 +371,18 @@ public class ScanActivity extends Activity {
             }
             else if (intent.getAction().equalsIgnoreCase(ScanAPIApplication.NOTIFY_SCANNER_ARRIVAL))
             {
-                Utilities.makeLongToast(c, intent.getStringExtra(ScanAPIApplication.EXTRA_DEVICENAME) + " Connected");
+                Utilities.makeToast(c, intent.getStringExtra(ScanAPIApplication.EXTRA_DEVICENAME) + " Connected");
             }
             else if (intent.getAction().equalsIgnoreCase(ScanAPIApplication.NOTIFY_SCANPI_INITIALIZED))
             {
-                Utilities.makeLongToast(c, "Ready to pair with scanner");
+                Utilities.makeToast(c, "Ready to pair with scanner");
             }
             else if (intent.getAction().equalsIgnoreCase(ScanAPIApplication.NOTIFY_CLOSE_ACTIVITY))
             {
             }
             else if (intent.getAction().equalsIgnoreCase(ScanAPIApplication.NOTIFY_ERROR_MESSAGE))
             {
-                Utilities.makeLongToast(c, intent.getStringExtra(ScanAPIApplication.EXTRA_ERROR_MESSAGE));
+                Utilities.makeToast(c, intent.getStringExtra(ScanAPIApplication.EXTRA_ERROR_MESSAGE));
             }
         }// end on Recieve
     };
@@ -357,15 +398,15 @@ public class ScanActivity extends Activity {
         {
             if(actionId == EditorInfo.IME_ACTION_DONE && !v.getText().toString().isEmpty())
             {
-                handleInputs(productScan.getText().toString(), roomSpinner.getSelectedItem().toString(),
-                        rowSpinner.getSelectedItem().toString(), colSpinner.getSelectedItem().toString());
+                handleInputs(productScan.getText().toString(), getLinkedHashMapSpinnerKey(buildingSpinner),
+                        getLinkedHashMapSpinnerKey(roomSpinner), rowSpinner.getSelectedItem().toString(), colSpinner.getSelectedItem().toString());
             }
             return true;
         }
     };
 
-    private String fixedRow(String row){
-        if (row.charAt(0) == '0'){
+    private String fixedRow(String row) {
+        if (row.charAt(0) == '0') {
             return Character.toString( row.charAt(1) );
         }
         else {
@@ -373,16 +414,18 @@ public class ScanActivity extends Activity {
         }
     }
 
-    private void handleScanInput(String scanInput){
+    private void handleScanInput(String scanInput) {
         Log.d(TAG, "Just entered handleScanInput in ScanActivity!");
         Log.d(TAG, "scanInput: " + scanInput);
         Matcher locMatch = locRegex.matcher(scanInput);
         Matcher sqsMatch = sqsRegex.matcher(scanInput);
         Matcher upcMatch = upcRegex.matcher(scanInput);
-        if (locMatch.find()){
-            String room = locMatch.group(1);
-            String col = locMatch.group(2);
-            String row = locMatch.group(3);
+        if (locMatch.find()) {
+            String building = locMatch.group(1);
+            String room = locMatch.group(2);
+            String col = locMatch.group(3);
+            String row = locMatch.group(4);
+            buildingSpinner.setSelection(getLinkedHashMapAdapterIndex((LinkedHashMapAdapter<String, String>) buildingSpinner.getAdapter(), building));
             roomSpinner.setSelection(getLinkedHashMapAdapterIndex((LinkedHashMapAdapter<String, String>) roomSpinner.getAdapter(), room));
             colSpinner.setSelection(getSpinnerIndex(colSpinner, col));
             rowSpinner.setSelection(getSpinnerIndex(rowSpinner, fixedRow(row)));
@@ -391,6 +434,7 @@ public class ScanActivity extends Activity {
             //int masnum = Integer.parseInt(masnumAsString);
             productScan.setText(masnumAsString);
             handleInputs(productScan.getText().toString(),
+                    getLinkedHashMapSpinnerKey(buildingSpinner),
                     getLinkedHashMapSpinnerKey(roomSpinner),
                     rowSpinner.getSelectedItem().toString(),
                     colSpinner.getSelectedItem().toString());
@@ -399,44 +443,48 @@ public class ScanActivity extends Activity {
             String upc = scanInput + "-N";
             productScan.setText(upc);
             handleInputs(productScan.getText().toString(),
+                    getLinkedHashMapSpinnerKey(buildingSpinner),
                     getLinkedHashMapSpinnerKey(roomSpinner),
                     rowSpinner.getSelectedItem().toString(),
                     colSpinner.getSelectedItem().toString());
         } else {
+            Utilities.alertSoundVibrate(this);
             Utilities.makeToast(this, "Did not understand Scan (NOT Recognized)!");
         }
 
     }
 
-    private void handleInputs(String productScanValue, String roomSpinnerValue, String rowSpinnerValue, String colSpinnerValue) {
-        if(productScanValue.isEmpty()){
+    private void handleInputs(String productScanValue, String buildingSpinnerValue, String roomSpinnerValue, String rowSpinnerValue, String colSpinnerValue) {
+        if(productScanValue.isEmpty()) {
             Utilities.makeToast(this, "Need a Product Masnum or UPC.");
-        } else if (roomSpinnerValue.isEmpty()){
+        } else if (buildingSpinnerValue.isEmpty()) {
+            Utilities.makeToast(this, "Building is not defined.");
+        } else if (roomSpinnerValue.isEmpty()) {
             Utilities.makeToast(this, "Room is not defined.");
-        } else if (colSpinnerValue.isEmpty()){
-            Utilities.makeToast(this, "Grid(A-Z) is not defined.");
-        } else if (rowSpinnerValue.isEmpty()){
-            Utilities.makeToast(this, "Grid(1-20) is not defined.");
+        } else if (colSpinnerValue.isEmpty()) {
+            Utilities.makeToast(this, "Grid (A-Z) is not defined.");
+        } else if (rowSpinnerValue.isEmpty()) {
+            Utilities.makeToast(this, "Grid (1-99) is not defined.");
         } else {
-            commitScan(productScanValue, roomSpinnerValue, rowSpinnerValue, colSpinnerValue);
+            commitScan(productScanValue, buildingSpinnerValue, roomSpinnerValue, rowSpinnerValue, colSpinnerValue);
         }
     }
 
-    private void commitScan(String productScanValue, String roomSpinnerValue, String rowSpinnerValue, String colSpinnerValue) {
-        ScanRecord scanRec = new ScanRecord( productScanValue, BUILDING, roomSpinnerValue, colSpinnerValue, rowSpinnerValue );
+    private void commitScan(String productScanValue, String buildingSpinnerValue, String roomSpinnerValue, String rowSpinnerValue, String colSpinnerValue) {
+        ScanRecord scanRec = new ScanRecord( productScanValue, buildingSpinnerValue, roomSpinnerValue, colSpinnerValue, rowSpinnerValue );
         scanAccess.insertRecord(scanRec);
         Utilities.makeToast(this, "Successful scan!");
         productScan.setText("");
         populateCounts();
-
+        updateScannedList();
     }
 
-    private int getLinkedHashMapAdapterIndex(LinkedHashMapAdapter<String, String> adapter, String key){
+    private int getLinkedHashMapAdapterIndex(LinkedHashMapAdapter<String, String> adapter, String key) {
         Map.Entry<String, String> mapItem;
         int pos = 0;
         for (int i = 0; i < adapter.getCount(); i++) {
             mapItem = adapter.getItem(i);
-            if (mapItem.getKey().toLowerCase().equals(key.toLowerCase())){
+            if (mapItem.getKey().toLowerCase().equals(key.toLowerCase())) {
                 pos = i;
             }
         }
@@ -444,11 +492,11 @@ public class ScanActivity extends Activity {
     }
 
 
-    private int getSpinnerIndex(Spinner spinner, String Value){
+    private int getSpinnerIndex(Spinner spinner, String Value) {
         for(int i=0; i < spinner.getCount(); i++)
         {
             String valAtPos = (String)spinner.getItemAtPosition(i);
-            if (!valAtPos.isEmpty()){
+            if (!valAtPos.isEmpty()) {
                 if (valAtPos.toLowerCase().equals(Value.toLowerCase())) {
                     return i;
                 }
@@ -457,12 +505,42 @@ public class ScanActivity extends Activity {
         return 0;
     }
 
+    private void populateBuildings() {
 
-    private void populateRooms(){
+        JSONObject json;
+        try {
+            String roomJson = getResources().getString(R.string.buildingValues);
+            buildingHashMap.put("", "");
+            json = new JSONObject(roomJson);
+            Iterator<String> iter = json.keys();
+            while (iter.hasNext()) {
+                String key = iter.next();
+                try {
+                    Object value = json.get(key);
+                    buildingHashMap.put(key, value.toString());
+                } catch (JSONException e) {
+                    // Something went wrong!
+                }
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        LinkedHashMapAdapter roomAdapter = new LinkedHashMapAdapter<String, String>(this, android.R.layout.simple_spinner_item, buildingHashMap);
+
+        roomAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        buildingSpinner.setAdapter(roomAdapter);
+
+    }
+
+    private void populateRooms() {
 
         JSONObject json;
         try {
             String roomJson = getResources().getString(R.string.roomNameValues);
+            roomHashMap.put("", "");
             json = new JSONObject(roomJson);
             Iterator<String> iter = json.keys();
             while (iter.hasNext()) {
@@ -491,7 +569,7 @@ public class ScanActivity extends Activity {
 
     }
 
-    private void populateCols(){
+    private void populateCols() {
 
         ArrayAdapter<CharSequence> colAdapter = ArrayAdapter.createFromResource(this,
                 R.array.colValues, android.R.layout.simple_spinner_item);
@@ -501,17 +579,51 @@ public class ScanActivity extends Activity {
         colSpinner.setAdapter(colAdapter);
     }
 
-    private void populateRows(){
+    private void populateRows() {
 
         ArrayAdapter<String> rowAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
         rowAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         rowAdapter.add("");
 
-        for(int i = 1; i < 21; i++) {
+        for(int i = 1; i <= 99; i++) {
             rowAdapter.add(Integer.toString(i));
         }
 
         rowSpinner.setAdapter(rowAdapter);
 
+    }
+
+    private void deleteRow(int position)
+    {
+        final Cursor cursor = scannedListAdapter.getCursor();
+        cursor.moveToPosition(position);
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+
+        alertDialogBuilder
+                .setTitle("Confirm Delete")
+                .setMessage("Delete Scan?")
+                .setCancelable(false)
+                .setPositiveButton("Yes",new DialogInterface.OnClickListener()
+                {
+                    public void onClick(DialogInterface dialog,int id)
+                    {
+                        scanAccess.deleteByPk(cursor.getString(0));
+                        updateScannedList();
+                        populateCounts();
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener()
+                {
+                    public void onClick(DialogInterface dialog, int id)
+                    {
+                        dialog.cancel();
+                    }
+                })
+                .show();
+    }
+
+    private void updateScannedList()
+    {
+        scannedListAdapter.changeCursor(scanAccess.selectScansForDisplay());
     }
 }

@@ -4,8 +4,11 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 
+import java.util.concurrent.Semaphore;
+
 public class UpdateLauncher
 {
+    private static final Semaphore updateLock = new Semaphore(0);
     private Context context;
     private DroidConfigManager appConfig;
 
@@ -15,7 +18,7 @@ public class UpdateLauncher
         appConfig = new DroidConfigManager(activityContext);
     }
 
-    public Thread startDBUpdate(boolean startBlockingThread)
+    public Thread startDBUpdate()
     {
         Intent popIntent = new Intent(context, PopDatabaseService.class);
 
@@ -24,28 +27,19 @@ public class UpdateLauncher
         final ProgressDialog pausingDialog = new ProgressDialog(context);
         pausingDialog.setTitle("Updating Database");
         pausingDialog.setMessage("Please Stay in Wifi Range...");
-        pausingDialog.setCancelable(true);
+        pausingDialog.setCancelable(false);
 
         Thread pausingDialogThread = new Thread()
         {
             public void run()
             {
-                try
-                {
-                    Thread.sleep(20000);
-                }
-                catch (InterruptedException e)
-                {
-                    e.printStackTrace();
-                }
+                acquireUpdateLock();
                 pausingDialog.dismiss();
             }
         };
-        if(startBlockingThread)
-        {
-            pausingDialog.show();
-            pausingDialogThread.start();
-        }
+        pausingDialog.show();
+        pausingDialogThread.start();
+
         return pausingDialogThread;
     }
 
@@ -76,5 +70,22 @@ public class UpdateLauncher
         ProgressDialog.show(context, "Updating Application", "Please Stay in Wifi Range...", true);
         Intent appUpdateIntent = new Intent(context, AppUpdateService.class);
         context.startService(appUpdateIntent);
+    }
+
+    public static void acquireUpdateLock()
+    {
+        try
+        {
+            updateLock.acquire();
+        }
+        catch(InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public static void releaseUpdateLock()
+    {
+        updateLock.release();
     }
 }
