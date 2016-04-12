@@ -16,7 +16,7 @@ import com.sqsmv.productloc.database.QueryBuilder;
 
       public Cursor selectScansForPrint(int exportMode)
       {
-          if(exportMode == 1)
+          if(exportMode == 0)
           {
               //Normal Mode
               String[] cols = new String[]{ScanContract.COLUMN_NAME_MASNUM,

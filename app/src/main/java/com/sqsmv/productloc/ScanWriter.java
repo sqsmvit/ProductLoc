@@ -77,7 +77,7 @@ public class ScanWriter {
 
         switch(exportMode)
         {
-            case 2:
+            case 1:
                 fileName = "LOC_" + fileName;
                 break;
         }

@@ -5,7 +5,7 @@ import com.sqsmv.productloc.database.XMLDBContract;
 public class InventoryContract implements XMLDBContract
 {
     protected static final String TABLE_NAME = "Inventory";
-    protected static final String XML_FILE_NAME = "Inventory.xml";
+    protected static final String XML_FILE_NAME = "inventory.xml";
     public static final String COLUMN_NAME_MASNUM = "masnum";
     public static final String COLUMN_NAME_COHFP = "cohfp";
 

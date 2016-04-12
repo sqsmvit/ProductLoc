@@ -249,10 +249,19 @@ public class FindScanActivity extends Activity
             {
                 try
                 {
-                    int exportModeChoice = 2;
+                    int exportModeChoice = 1;
                     File exportFile = writeFromDB(exportModeChoice);
-                    ScanExporter.exportScan(this, exportFile, exportModeChoice, true);
-                    performMassDelete();
+                    if(ScanExporter.exportScan(this, exportFile, exportModeChoice, true))
+                    {
+                        performMassDelete();
+                        Utilities.makeToast(this, "File successfully exported to Dropbox");
+                    }
+                    else
+                    {
+                        Utilities.alertAlarm(this, 2000);
+                        Utilities.alertVibrate(this, new long[]{0, 500, 500, 500, 500});
+                        Utilities.makeToast(this, "Error exporting to DropBox");
+                    }
                 }
                 catch(IOException e)
                 {
@@ -294,7 +303,8 @@ public class FindScanActivity extends Activity
         }
         else
         {
-            Utilities.alertSoundVibrate(this);
+            Utilities.alertNotificationSound(this);
+            Utilities.alertVibrate(this, new long[]{0, 500, 250, 500});
             Utilities.makeToast(this, "Did not understand Scan (NOT Recognized)!");
         }
         handleInput();

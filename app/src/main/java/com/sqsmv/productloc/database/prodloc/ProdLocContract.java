@@ -15,7 +15,6 @@ public class ProdLocContract implements XMLDBContract
     public static final String COLUMN_NAME_MASNUM = "masnum";
     public static final String COLUMN_NAME_LOCCODE = "loccode";
     public static final String COLUMN_NAME_NAME = "name";
-    public static final String COLUMN_NAME_ORDINAL = "ordinal";
 
     @Override
     public String getTableName()
@@ -36,7 +35,6 @@ public class ProdLocContract implements XMLDBContract
                 COLUMN_NAME_MASNUM + " TEXT, " +
                 COLUMN_NAME_LOCCODE + " TEXT, " +
                 COLUMN_NAME_NAME + " TEXT, " +
-                COLUMN_NAME_ORDINAL + " INTEGER, " +
                 COLUMN_NAME_SHA + " TEXT);";
     }
 
@@ -65,7 +63,6 @@ public class ProdLocContract implements XMLDBContract
                 COLUMN_NAME_MASNUM,
                 COLUMN_NAME_LOCCODE,
                 COLUMN_NAME_NAME,
-                COLUMN_NAME_ORDINAL,
                 COLUMN_NAME_SHA
         };
     }

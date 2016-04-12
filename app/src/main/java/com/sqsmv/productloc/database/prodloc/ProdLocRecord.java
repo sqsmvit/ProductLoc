@@ -15,7 +15,6 @@ public class ProdLocRecord extends XMLDBRecord
     private String masNum;
     private String locCode;
     private String name;
-    private int ordinal;
 
     public ProdLocRecord(Cursor dbCursor)
     {
@@ -67,11 +66,6 @@ public class ProdLocRecord extends XMLDBRecord
         return name;
     }
 
-    public int getOrdinal()
-    {
-        return ordinal;
-    }
-
     public void setPkLocScanLineId(int pkLocScanLineId)
     {
         this.pkLocScanLineId = pkLocScanLineId;
@@ -117,11 +111,6 @@ public class ProdLocRecord extends XMLDBRecord
         this.name = name;
     }
 
-    public void setOrdinal(int ordinal)
-    {
-        this.ordinal = ordinal;
-    }
-
     @Override
     public void initRecord()
     {
@@ -134,7 +123,6 @@ public class ProdLocRecord extends XMLDBRecord
         setMasNum("");
         setLocCode("");
         setName("");
-        setOrdinal(-1);
         setSha("");
     }
 
@@ -143,7 +131,7 @@ public class ProdLocRecord extends XMLDBRecord
     {
         return new String[] {
                 Integer.toString(getPKLocScanLineId()), getBuildingId(), getRoomId(), getColId(), getRowId(), getScanStamp(),
-                getMasNum(), getLocCode(), getName(), Integer.toString(getOrdinal()), getSha()
+                getMasNum(), getLocCode(), getName(), getSha()
         };
     }
 
@@ -187,10 +175,6 @@ public class ProdLocRecord extends XMLDBRecord
             else if(dbCursor.getColumnName(count).equals(ProdLocContract.COLUMN_NAME_NAME))
             {
                 setName(dbCursor.getString(count));
-            }
-            else if(dbCursor.getColumnName(count).equals(ProdLocContract.COLUMN_NAME_ORDINAL))
-            {
-                setOrdinal(dbCursor.getInt(count));
             }
             else if(dbCursor.getColumnName(count).equals(ProdLocContract.COLUMN_NAME_SHA))
             {

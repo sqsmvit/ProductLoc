@@ -14,6 +14,7 @@ import com.sqsmv.productloc.database.XMLDBAccess;
 import com.sqsmv.productloc.database.inventory.InventoryAccess;
 import com.sqsmv.productloc.database.prodloc.ProdLocAccess;
 import com.sqsmv.productloc.database.product.ProductAccess;
+import com.sqsmv.productloc.database.roomgrid.RoomGridAccess;
 import com.sqsmv.productloc.database.upc.UPCAccess;
 
 import java.io.File;
@@ -22,6 +23,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.concurrent.Semaphore;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -45,7 +47,9 @@ public class PopDatabaseService extends IntentService
     {
         makeNotification("Dropbox Download Started", false);
         DBAdapter dbAdapter = new DBAdapter(this);
+        Semaphore popDBSemaphore = new Semaphore(2, true);
         boolean isLockReleased = false;
+        boolean isSlowUpdate = Utilities.totalDeviceMemory(this) <= 1024;
 
         //Download files.zip from DropBox
         downloadDBXZip();
@@ -58,26 +62,19 @@ public class PopDatabaseService extends IntentService
             resetTables(dbAdapter);
             makeNotification("Database Update Started", false);
 
-            XMLDBAccess[] necessaryUpdateThreads = new XMLDBAccess[]{new ProdLocAccess(dbAdapter), new UPCAccess(dbAdapter)};
-            XMLDBAccess[] otherDataAccesses = new XMLDBAccess[]{new ProductAccess(dbAdapter), new InventoryAccess(dbAdapter)};
+            XMLDBAccess[] necessaryUpdateThreads = new XMLDBAccess[] {new ProdLocAccess(dbAdapter), new UPCAccess(dbAdapter),
+                                                                      new RoomGridAccess(dbAdapter)};
+            XMLDBAccess[] otherDataAccesses = new XMLDBAccess[] {new ProductAccess(dbAdapter), new InventoryAccess(dbAdapter)};
             ArrayList<Thread> updateThreads = new ArrayList<Thread>();
             XMLDBAccess[][] allXMLDBAccesses = new XMLDBAccess[][] {necessaryUpdateThreads, otherDataAccesses};
             for(XMLDBAccess[] xmlDBAccesses : allXMLDBAccesses)
             {
                 for(XMLDBAccess xmlDBAccess : xmlDBAccesses)
                 {
-                    updateThreads.add(new FMDumpHandler(xmlDBAccess));
+                    updateThreads.add(new FMDumpHandler(xmlDBAccess,isSlowUpdate, popDBSemaphore));
                 }
             }
-
-            if(Utilities.totalDeviceMemory(this) <= 1024)
-            {
-                isLockReleased = startSlowUpdateThreads(updateThreads, necessaryUpdateThreads.length);
-            }
-            else
-            {
-                isLockReleased = startFastUpdateThreads(updateThreads, necessaryUpdateThreads.length);
-            }
+            isLockReleased = startUpdateThreads(updateThreads, necessaryUpdateThreads.length);
         }
         catch(IOException e)
         {
@@ -96,7 +93,8 @@ public class PopDatabaseService extends IntentService
         Log.d(TAG, "in copyDBXFile");
         DropboxManager dbxMan = new DropboxManager(this);
 
-        dbxMan.writeToStorage("/out/" + zipFileName, Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString() + File.separator + zipFileName, false);
+        dbxMan.writeToStorage("/out/" + zipFileName, Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString() +
+                "/" + zipFileName, false);
     }
 
     private void unzip(File zipFile) throws IOException
@@ -158,46 +156,8 @@ public class PopDatabaseService extends IntentService
 		mNotificationManager.notify(0, mBuilder.build());
 	}
 
-    private boolean startSlowUpdateThreads(ArrayList<Thread> updateThreads, int numNecessaryUpdates)
+    private boolean startUpdateThreads(ArrayList<Thread> updateThreads, int numNecessaryUpdates)
     {
-        Log.d(TAG, "Slow Update");
-        int count = 0;
-        int countJoined = 0;
-        boolean isLockReleased = false;
-        while(!updateThreads.isEmpty())
-        {
-            Thread updateThread = updateThreads.get(count);
-            Log.d(TAG, "Staring thread " + updateThread.getName());
-            updateThread.start();
-            count++;
-            if((count % 2) == 0 || updateThreads.size() < 2)
-            {
-                for(int i = 0; i < count; i++)
-                {
-                    try
-                    {
-                        updateThreads.remove(0).join();
-                    }
-                    catch(InterruptedException e)
-                    {
-                        e.printStackTrace();
-                    }
-                    countJoined++;
-                    if(countJoined == numNecessaryUpdates)
-                    {
-                        UpdateLauncher.releaseUpdateLock();
-                        isLockReleased = true;
-                    }
-                }
-                count = 0;
-            }
-        }
-        return isLockReleased;
-    }
-
-    private boolean startFastUpdateThreads(ArrayList<Thread> updateThreads, int numNecessaryUpdates)
-    {
-        Log.d(TAG, "Fast Update");
         int count = 0;
         boolean isLockReleased = false;
         for(Thread updateThread : updateThreads)
@@ -232,24 +192,5 @@ public class PopDatabaseService extends IntentService
         ProdLocAccess prodLocAccess = new ProdLocAccess(dbAdapter);
         prodLocAccess.open();
         prodLocAccess.reset();
-
-        /*
-        try
-        {
-            Date lastDropDate = Utilities.parseYYMMDDString(droidConfigManager.accessString(DroidConfigManager.PRODUCTLENS_RESET_DATE, null, ""));
-
-            if(((currentDate.getTime() - lastDropDate.getTime()) / 86400000) >= 7)
-            {
-                ProductLensAccess productLensAccess = new ProductLensAccess(dbAdapter);
-                productLensAccess.open();
-                productLensAccess.reset();
-                droidConfigManager.accessString(DroidConfigManager.PRODUCTLENS_RESET_DATE, Utilities.formatYYMMDDDate(currentDate), "");
-            }
-        }
-        catch(ParseException e)
-        {
-            droidConfigManager.accessString(DroidConfigManager.PRODUCTLENS_RESET_DATE, Utilities.formatYYMMDDDate(currentDate), "");
-        }
-        */
     }
 }

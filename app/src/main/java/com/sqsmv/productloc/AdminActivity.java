@@ -229,7 +229,7 @@ public class AdminActivity extends Activity
                 return compareVal;
             }
         };
-        Collections.sort(backupList, comp);
+        Collections.sort(backupList, Collections.reverseOrder(comp));
     }
 
     private void createAdapterDataset()

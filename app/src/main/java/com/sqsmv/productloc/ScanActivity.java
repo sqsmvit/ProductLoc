@@ -25,6 +25,7 @@ import android.widget.TextView;
 import com.socketmobile.apiintegration.ScanAPIApplication;
 import com.sqsmv.productloc.database.DBAdapter;
 import com.sqsmv.productloc.database.product.ProductAccess;
+import com.sqsmv.productloc.database.roomgrid.RoomGridAccess;
 import com.sqsmv.productloc.database.scan.ScanAccess;
 import com.sqsmv.productloc.database.scan.ScanRecord;
 import com.sqsmv.productloc.database.upc.UPCAccess;
@@ -51,6 +52,7 @@ public class ScanActivity extends Activity {
     private DBAdapter dbAdapter;
     private ProductAccess productAccess;
     private UPCAccess upcAccess;
+    private RoomGridAccess roomGridAccess;
     private ScanAccess scanAccess;
     private Pattern upcRegex;
     private Pattern sqsRegex;
@@ -84,6 +86,7 @@ public class ScanActivity extends Activity {
         dbAdapter = new DBAdapter(this);
         productAccess = new ProductAccess(dbAdapter);
         upcAccess = new UPCAccess(dbAdapter);
+        roomGridAccess = new RoomGridAccess(dbAdapter);
         scanAccess = new ScanAccess(dbAdapter);
 
         upcRegex = Pattern.compile("^\\d{12,13}(-N)?$");
@@ -136,6 +139,7 @@ public class ScanActivity extends Activity {
 
         productAccess.open();
         upcAccess.open();
+        roomGridAccess.open();
         scanAccess.open();
 
         populateCounts();
@@ -317,10 +321,19 @@ public class ScanActivity extends Activity {
             {
                 try
                 {
-                    int exportModeChoice = 1; /* set to 1 ... allows for multiple exportModeChoice */
+                    int exportModeChoice = 0; /* set to 1 ... allows for multiple exportModeChoice */
                     File exportFile = writeFromDB(exportModeChoice);
-                    ScanExporter.exportScan(this, exportFile, exportModeChoice, true);
-                    performMassDelete();
+                    if(ScanExporter.exportScan(this, exportFile, exportModeChoice, true))
+                    {
+                        performMassDelete();
+                        Utilities.makeToast(this, "File successfully exported to Dropbox");
+                    }
+                    else
+                    {
+                        Utilities.alertAlarm(this, 2000);
+                        Utilities.alertVibrate(this, new long[]{0, 500, 500, 500, 500});
+                        Utilities.makeToast(this, "Error exporting to DropBox");
+                    }
                 }
                 catch(IOException e)
                 {
@@ -448,7 +461,8 @@ public class ScanActivity extends Activity {
                     rowSpinner.getSelectedItem().toString(),
                     colSpinner.getSelectedItem().toString());
         } else {
-            Utilities.alertSoundVibrate(this);
+            Utilities.alertNotificationSound(this);
+            Utilities.alertVibrate(this, new long[] {0, 500, 250, 500});
             Utilities.makeToast(this, "Did not understand Scan (NOT Recognized)!");
         }
 
@@ -466,6 +480,12 @@ public class ScanActivity extends Activity {
         } else if (rowSpinnerValue.isEmpty()) {
             Utilities.makeToast(this, "Grid (1-99) is not defined.");
         } else {
+            if(!roomGridAccess.isValidLocation(buildingSpinnerValue, roomSpinnerValue, rowSpinnerValue, colSpinnerValue))
+            {
+                Utilities.alertVibrate(this, new long[]{0, 1500});
+                Utilities.alertNotificationSound(this);
+                Utilities.makeLongToast(this, "Not a valid location. Please let Rich/Cory know if it is valid.");
+            }
             commitScan(productScanValue, buildingSpinnerValue, roomSpinnerValue, rowSpinnerValue, colSpinnerValue);
         }
     }

@@ -12,11 +12,11 @@ public class ScanExporter {
     {
         String exportPath = "/Default/";
 
-        if(exportMode == 1)
+        if(exportMode == 0)
         {
             exportPath = "/FMImport/";
         }
-        else if(exportMode == 2)
+        else if(exportMode == 1)
         {
             exportPath = "/LocateScan/";
         }
@@ -27,17 +27,7 @@ public class ScanExporter {
     private static boolean exportDBX(Context callingContext, File exportFile, String exportPath, boolean fromCommit)
     {
         DropboxManager dropboxManager = new DropboxManager(callingContext);
-        if(dropboxManager.hasLinkedAccount())
-        {
-            String scanPath = exportPath + exportFile.getName();
-            dropboxManager.writeToDropbox(exportFile, scanPath, fromCommit, true);
-            Utilities.makeToast(callingContext, "File exported to DropBox");
-            return true;
-        }
-        else
-        {
-            Utilities.makeToast(callingContext, "Error exporting to DropBox");
-            return false;
-        }
+        String scanPath = exportPath + exportFile.getName();
+        return dropboxManager.writeToDropbox(exportFile, scanPath, fromCommit);
     }
 }

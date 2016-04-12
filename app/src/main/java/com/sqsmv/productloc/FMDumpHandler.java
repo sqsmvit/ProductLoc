@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.Semaphore;
 
 
 public class FMDumpHandler extends Thread
@@ -22,17 +23,32 @@ public class FMDumpHandler extends Thread
     private static final String TAG = "FMDumpHandler";
 
     XMLDBAccess xmlDBAccess;
+    private Semaphore popDBSemaphore;
+    private boolean isSlowUpdate;
 
-    FMDumpHandler(XMLDBAccess fileDataAccess)
+    FMDumpHandler(XMLDBAccess xmlDBAccess, boolean isSlowUpdate, Semaphore popDBSemaphore)
     {
-        super(fileDataAccess.getTableName());
-        xmlDBAccess = fileDataAccess;
+        super(xmlDBAccess.getTableName());
+        this.xmlDBAccess = xmlDBAccess;
+        this.isSlowUpdate = isSlowUpdate;
+        this.popDBSemaphore = popDBSemaphore;
     }
 
     @Override
     public void run()
     {
-        Log.d(TAG, "Running FMDumpHandler");
+        if(isSlowUpdate)
+        {
+            try
+            {
+                popDBSemaphore.acquire();
+            }
+            catch(InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+        }
+        Log.d(TAG, "run: " + getName());
         File xmlFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString() + File.separator + xmlDBAccess.getXMLFileName());
         try
         {
@@ -59,6 +75,13 @@ public class FMDumpHandler extends Thread
         catch(IOException e)
         {
             e.printStackTrace();
+        }
+        finally
+        {
+            if(isSlowUpdate)
+            {
+                popDBSemaphore.release();
+            }
         }
     }
 

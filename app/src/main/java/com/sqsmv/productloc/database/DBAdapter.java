@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import com.sqsmv.productloc.database.findscan.FindScanContract;
 import com.sqsmv.productloc.database.inventory.InventoryContract;
 import com.sqsmv.productloc.database.prodloc.ProdLocContract;
+import com.sqsmv.productloc.database.roomgrid.RoomGridContract;
 import com.sqsmv.productloc.database.scan.ScanContract;
 import com.sqsmv.productloc.database.product.ProductContract;
 import com.sqsmv.productloc.database.upc.UPCContract;
@@ -16,9 +17,10 @@ public class DBAdapter extends SQLiteOpenHelper
 {
     private static final String DATABASE_NAME = "ProdLocDB";
 
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 5;
 
-    private static final XMLDBContract[] xmlContracts = {new ProductContract(), new UPCContract(), new ProdLocContract(), new InventoryContract()};
+    private static final XMLDBContract[] xmlContracts = {new ProductContract(), new UPCContract(), new ProdLocContract(), new InventoryContract(),
+                                                         new RoomGridContract()};
     private static final DBContract[] scanContracts = {new ScanContract(), new FindScanContract()};
 
     public DBAdapter(Context ctx)
