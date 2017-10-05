@@ -9,6 +9,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.dropbox.core.android.Auth;
+
 import java.io.File;
 import java.util.Date;
 
@@ -31,6 +33,7 @@ public class LoadActivity extends Activity {
 
         appConfig = new DroidConfigManager(this);
         dropboxManager = new DropboxManager(this);
+        updateLauncher = new UpdateLauncher(this);
 
         TextView textVersionInfo = (TextView)findViewById(R.id.versionInfo);
         textVersionInfo.setText("Version: " + Utilities.getVersion(this));
@@ -55,32 +58,31 @@ public class LoadActivity extends Activity {
         Log.d(TAG, "in onResume and for the LoadActivity!");
         super.onResume();
 
-        if(dropboxManager.finishAuthentication())
+        String accessToken = appConfig.accessString(DroidConfigManager.DROPBOX_ACCESS_TOKEN, null, null);
+        if (accessToken == null)
         {
-            String accessToken = dropboxManager.getOAuth2AccessToken();
-            appConfig.accessString(DroidConfigManager.DROPBOX_ACCESS_TOKEN, accessToken, "");
-        }
-        linkDropboxAccount();
-        updateLauncher = new UpdateLauncher(this);
-    }
-
-    private void linkDropboxAccount()
-    {
-        Log.d(TAG, "in linkDropboxAccount and for the LoadActivity!");
-
-        String accessToken = appConfig.accessString(DroidConfigManager.DROPBOX_ACCESS_TOKEN, null, "");
-        if(!accessToken.isEmpty())
-        {
-            dropboxManager.setStaticOAuth2AccessToken(accessToken);
-        }
-        else if(Utilities.checkWifi(this))
-        {
-            dropboxManager.linkDropboxAccount();
+            accessToken = Auth.getOAuth2Token();
+            if (accessToken != null)
+            {
+                appConfig.accessString(DroidConfigManager.DROPBOX_ACCESS_TOKEN, accessToken, null);
+                dropboxManager.initDbxClient(accessToken);
+            }
+            else
+            {
+                if(Utilities.checkWifi(this))
+                {
+                    dropboxManager.linkDropboxAccount();
+                }
+                else
+                {
+                    Utilities.makeLongToast(this, "Must be connected to WiFi to link to Dropbox!");
+                    finish();
+                }
+            }
         }
         else
         {
-            Utilities.makeLongToast(this, "Must be connected to WiFi to link to Dropbox!");
-            finish();
+            dropboxManager.initDbxClient(accessToken);
         }
     }
 

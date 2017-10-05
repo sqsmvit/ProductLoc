@@ -28,6 +28,6 @@ public class ScanExporter {
     {
         DropboxManager dropboxManager = new DropboxManager(callingContext);
         String scanPath = exportPath + exportFile.getName();
-        return dropboxManager.writeToDropbox(exportFile, scanPath, fromCommit);
+        return dropboxManager.writeToDropbox(exportFile, scanPath);
     }
 }

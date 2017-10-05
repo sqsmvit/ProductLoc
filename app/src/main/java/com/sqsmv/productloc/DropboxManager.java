@@ -2,15 +2,17 @@ package com.sqsmv.productloc;
 
 import android.content.Context;
 
-import com.dropbox.client2.DropboxAPI;
-import com.dropbox.client2.android.AndroidAuthSession;
-import com.dropbox.client2.exception.DropboxException;
-import com.dropbox.client2.session.AppKeyPair;
+import com.dropbox.core.DbxException;
+import com.dropbox.core.DbxRequestConfig;
+import com.dropbox.core.android.Auth;
+import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.files.WriteMode;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 
 /**
  * Manager class for the Dropbox API. Controls linking, access, reading, and writing to an account.
@@ -20,9 +22,8 @@ public class DropboxManager
     private static final String TAG = "DropboxManager";
 
     private Context context;
-    private DropboxAPI<AndroidAuthSession> dropboxAPI;
 
-    private static String oAuth2AccessToken;
+    private static DbxClientV2 dbxClientV2;
 
     /**
      * Constructor.
@@ -31,27 +32,15 @@ public class DropboxManager
     public DropboxManager(Context context)
     {
         this.context = context;
-
-        String dropboxAppKey = context.getString(R.string.DBX_APP_KEY);
-        String dropboxAppSecret = context.getString(R.string.DBX_SECRET_KEY);
-
-        AppKeyPair appKeys = new AppKeyPair(dropboxAppKey, dropboxAppSecret);
-        AndroidAuthSession session = new AndroidAuthSession(appKeys);
-        dropboxAPI = new DropboxAPI<AndroidAuthSession>(session);
-
-        if(oAuth2AccessToken != null)
-        {
-            setOAuth2AccessToken(oAuth2AccessToken);
-        }
     }
 
     /**
-     * Launches the Dropbox app if it is installed, the browser if not, for linking a Dropbox
-     * account. Access token is set when an account is successfully linked.
+     * Launches the Dropbox app if it is installed, the browser if not, for linking a Dropbox account. Access token is set when an account is
+     * successfully linked.
      */
     public void linkDropboxAccount()
     {
-        dropboxAPI.getSession().startOAuth2Authentication(context);
+        Auth.startOAuth2Authentication(context, context.getString(R.string.DBX_APP_KEY));
     }
 
     /**
@@ -60,52 +49,19 @@ public class DropboxManager
      */
     public String getOAuth2AccessToken()
     {
-        return dropboxAPI.getSession().getOAuth2AccessToken();
+        return "";//dropboxAPI.getSession().getOAuth2AccessToken();
     }
 
     /**
-     * Sets the accessToken stored inside the DropboxManager, then sets the value to the API session's.
-     * @param accessToken    The access token to set.
+     * Initializes the client connection to a Dropbox account.
+     * @param accessToken     The Dropbox access token for the Dropbox account
      */
-    public void setStaticOAuth2AccessToken(String accessToken)
+    public void initDbxClient(String accessToken)
     {
-        oAuth2AccessToken = accessToken;
-        setOAuth2AccessToken(oAuth2AccessToken);
-    }
-
-    /**
-     * Finishes the authentication process for linking a Dropbox account.
-     * @return true if linking was successful, otherwise false.
-     */
-    public boolean finishAuthentication()
-    {
-        boolean success = true;
-        if(dropboxAPI.getSession().authenticationSuccessful())
+        if (dbxClientV2 == null)
         {
-            try
-            {
-                dropboxAPI.getSession().finishAuthentication();
-            }
-            catch(IllegalStateException e)
-            {
-                e.printStackTrace();
-                success = false;
-            }
+            dbxClientV2 = new DbxClientV2(new DbxRequestConfig(context.getString(R.string.app_name)), accessToken);
         }
-        else
-        {
-            success = false;
-        }
-        return success;
-    }
-
-    /**
-     * Checks if the Dropbox API has a linked account already.
-     * @return true if there is a linked account, otherwise false.
-     */
-    public boolean hasLinkedAccount()
-    {
-        return dropboxAPI.getSession().isLinked();
     }
 
     /**
@@ -125,13 +81,18 @@ public class DropboxManager
                 try
                 {
                     FileOutputStream outputStream = new FileOutputStream(downloadFile);
-                    dropboxAPI.getFile(dbxFilePath, null, outputStream, null);
+                    dbxClientV2.files().download(dbxFilePath).download(outputStream);
+                    outputStream.close();
                 }
                 catch(FileNotFoundException e)
                 {
                     e.printStackTrace();
                 }
-                catch(DropboxException e)
+                catch(IOException e)
+                {
+                    e.printStackTrace();
+                }
+                catch(DbxException e)
                 {
                     e.printStackTrace();
                 }
@@ -155,10 +116,9 @@ public class DropboxManager
      * Writes a file from local storage to Dropbox.
      * @param fileToWrite        The File to write to Dropbox.
      * @param dbxFilePath        The path to the write location on Dropbox.
-     * @param shouldSteal        Whether the file should be removed from local storage when the write is complete.
      * @return true if the write to Dropbox was successful, otherwise false.
      */
-    public boolean writeToDropbox(final File fileToWrite, final String dbxFilePath, final boolean shouldSteal)
+    public boolean writeToDropbox(final File fileToWrite, final String dbxFilePath)
     {
         final boolean[] writeSuccessful = new boolean[1];
         writeSuccessful[0] = false;
@@ -170,14 +130,18 @@ public class DropboxManager
                 try
                 {
                     FileInputStream inputStream = new FileInputStream(fileToWrite);
-                    dropboxAPI.putFile(dbxFilePath, inputStream, fileToWrite.length(), null, null);
+                    dbxClientV2.files().uploadBuilder(dbxFilePath).withMode(WriteMode.OVERWRITE).uploadAndFinish(inputStream);
                     writeSuccessful[0] = true;
                 }
                 catch(FileNotFoundException e)
                 {
                     e.printStackTrace();
                 }
-                catch(DropboxException e)
+                catch(IOException e)
+                {
+                    e.printStackTrace();
+                }
+                catch(DbxException e)
                 {
                     e.printStackTrace();
                 }
@@ -192,10 +156,6 @@ public class DropboxManager
         {
             e.printStackTrace();
         }
-        if(shouldSteal)
-        {
-            fileToWrite.delete();
-        }
 
         return writeSuccessful[0];
     }
@@ -207,7 +167,7 @@ public class DropboxManager
      */
     public String getDbxFileRev(final String dbxFilePath)
     {
-        final DropboxAPI.Entry[] metadata = new DropboxAPI.Entry[1];
+        final String rev[] = new String[1];
         Thread metadataThread = new Thread()
         {
             @Override
@@ -215,9 +175,9 @@ public class DropboxManager
             {
                 try
                 {
-                    metadata[0] = dropboxAPI.metadata(dbxFilePath, 1, null, false, null);
+                    rev[0] = dbxClientV2.files().download(dbxFilePath).getResult().getRev();
                 }
-                catch(DropboxException e)
+                catch(DbxException e)
                 {
                     e.printStackTrace();
                 }
@@ -233,15 +193,6 @@ public class DropboxManager
             e.printStackTrace();
         }
 
-        return metadata[0].rev;
-    }
-
-    /**
-     * Sets the access token to the API session.
-     * @param accessToken    The access token to set.
-     */
-    private void setOAuth2AccessToken(String accessToken)
-    {
-        dropboxAPI.getSession().setOAuth2AccessToken(accessToken);
+        return rev[0];
     }
 }
